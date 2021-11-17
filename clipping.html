@@ -1,0 +1,260 @@
+ <!DOCTYPE html> 
+ 
+ 
+<html lang="pt-br">
+	<head>
+	<meta charset="UTF-8"/>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+	<link href="style.css" rel="stylesheet"/>
+	<title> Clipping </title>
+	
+	</head>
+	
+	
+	
+    <body>
+	
+	<h1> Algoritmo dinâmico de Clipping</h1>
+	<h2> Sutherland Hodgman </h2>
+	
+	<div class="container">
+        <!-- Indica o comportamento das divisórias a seguir, elas ocuparão uma "linha" de seu contêiner -->
+        <div class="row">
+	
+	<div class="main-right col-md-6">
+	<div class="topmargin">
+	<div>
+	<input type="number" placeholder="x1" id="x1" min="0">
+	<input type="number" placeholder="y1" id="y1" min="0">
+	</div>
+	<div>
+	<input type="number" placeholder="x2" id="x2" min="0">
+	<input type="number" placeholder="y2" id="y2" min="0">
+	</div >
+	<div>
+	<input type="number" placeholder="x3" id="x3" min="0">
+	<input type="number" placeholder="y3" id="y3" min="0">
+	</div >
+	<div>
+	<input type="number" placeholder="x4" id="x4" min="0">
+	<input type="number" placeholder="y4" id="y4" min="0">
+	</div >
+	<div>
+	<input type="number" placeholder="x5" id="x5" min="0">
+	<input type="number" placeholder="y5" id="y5" min="0">
+	</div >
+	<div>
+	<input type="number" placeholder="x6" id="x6" min="0">
+	<input type="number" placeholder="y6" id="y6" min="0">
+	</div >
+	</div>
+	</div>
+
+	<div class="main-center col-md-6">
+	<div>
+	<canvas id='canvas' width='400' height='400'></canvas>
+	</div >
+	
+	<div>
+	<button type="button" class="btn btn-light" onclick="newone()">Quero outro clipping!</button>
+	<button type="button" class="btn btn-light" onclick="choose()">Quero escolher!</button>
+	</div >
+	</div>
+	
+	</div >
+	</div>
+	
+	<div class="dark-article">
+		<h3> Como funciona? </h2>
+		<div class="row">
+		<div class="main-left col-md-6">
+		<canvas id='canvas1' width='400' height='400'></canvas>
+		</div >
+		<div class="main-right col-md-6 topmargin2" >
+		<p> O algoritmo analisa, para a linha infinita traçada a partir de um par 
+		de pontos do polígono de clip (rosa), quais pontos do polígono subject (azul) estão do lado correto (dentro do polígono de clip),
+		percorrendo a lista de pontos do polígono subject. Aqueles que estão fora da área não saem como output, havendo a 
+		inserção dos pontos do novo polígono.</p>
+		<p> Esse processo se repete para cada lado do polígono de clip, e terminamos com um novo polígono, representado em roxo, que é o que buscávamos. </p>
+		</div >
+		<div class="main-right col-md-12 topmargin2" >
+		<p> Essa forma de clipping é certamente das menos custosas, apesar de redundante em alguns pontos, mas é frequentemente utilizada por consumir menos memória que outros algoritmos de clipping, como o de  Cohen Hodgmen.</p>
+		</div>
+		</div>
+	</div>
+	
+    </body>
+	
+	
+	<script>
+	
+	
+	//Função de clipping
+	
+	function clip (subjectPolygon, clipPolygon) {
+		 
+            var clip1, clip2, a, b; //clip1 clip2 são os primeiros pontos da lista de vertices do polígono de clipping
+            var inside = function (p) { //função que retorna True ou False, se o primeiro valor calculado for maior que o segundo /será utilizada para dizer se os pontos de vertice do polígono sujeito à analise esta dentro do de clipping
+                return (clip2[0]-clip1[0])*(p[1]-clip1[1]) > (clip2[1]-clip1[1])*(p[0]-clip1[0]); // análise entre reta clip1clip2 e p
+            };
+            var intersection = function () { //testa os pontos em que há interseção entre os polígonos
+                var dif_atual = [ clip1[0] - clip2[0], clip1[1] - clip2[1] ],
+                    dif_anterior = [ a[0] - b[0], a[1] - b[1] ],
+                    n1 = clip1[0] * clip2[1] - clip1[1] * clip2[0],
+                    n2 = a[0] * b[1] - a[1] * b[0], 
+                    n3 = 1.0 / (dif_atual[0] * dif_anterior[1] - dif_atual[1] * dif_anterior[0]);
+                return [(n1*dif_anterior[0] - n2*dif_atual[0]) * n3, (n1*dif_anterior[1] - n2*dif_atual[1]) * n3];
+            };
+            var outputList = subjectPolygon; 
+            clip1 = clipPolygon[clipPolygon.length-1]; //pega o último ponto do polígono de clipping, definindo-o como clip1
+            for (var j in clipPolygon) {
+                clip2 = clipPolygon[j];
+                var inputList = outputList;
+                outputList = [];
+                a = inputList[inputList.length - 1]; //última entrada da lista
+                for (var i in inputList) {
+                    b = inputList[i];
+                    if (inside(b)) {
+                        if (!inside(a)) {
+                            outputList.push(intersection());
+                        }
+                        outputList.push(b);
+                    }
+                    else if (inside(a)) {
+                        outputList.push(intersection());
+                    }
+                    a = b;
+                }
+                clip1 = clip2;
+            }
+            return outputList
+       }
+		
+		
+		
+		//Função que desenha os polígono subject e de clip
+		function drawPolygon(ctx, polygon, strokeStyle, fillStyle) {
+            ctx.strokeStyle = strokeStyle;
+            ctx.fillStyle = fillStyle;
+            ctx.beginPath();
+            ctx.moveTo(polygon[0][0],polygon[0][1]); 
+            for (var i = 1; i < polygon.length ; i++)
+                ctx.lineTo(polygon[i][0],polygon[i][1]);
+            ctx.lineTo(polygon[0][0],polygon[0][1]); //retorna ao início
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+        }	
+
+		// desenha o polígono clippado, linha a linha
+		async function drawPolygonClip (ctx, polygon, strokeStyle, fillStyle) {
+            ctx.strokeStyle = strokeStyle;
+            ctx.fillStyle = fillStyle;
+            ctx.beginPath();
+            ctx.moveTo(polygon[0][0],polygon[0][1]); 
+            for (var i = 1; i < polygon.length ; i++){
+                ctx.lineTo(polygon[i][0],polygon[i][1]);
+				await timer(400);
+				ctx.stroke();};
+			ctx.beginPath(); //reta faltante, não pode entrar no loop
+			await timer(300);
+			ctx.moveTo(polygon[0][0],polygon[0][1]); 
+			ctx.lineTo(polygon[polygon.length-1][0],polygon[polygon.length-1][1]);
+			ctx.stroke();
+			ctx.beginPath(); // refaz o desenho, dessa vez como polígono inteiro para o fill
+			await timer(300);
+            ctx.moveTo(polygon[0][0],polygon[0][1]); 
+            for (var i = 1; i < polygon.length ; i++){
+                ctx.lineTo(polygon[i][0],polygon[i][1]);};
+            ctx.lineTo(polygon[0][0],polygon[0][1]);
+            ctx.fill();
+        }		
+		
+		
+		//Função de timer para o desenho
+		const timer = ms => new Promise(res => setTimeout(res, ms))
+
+		//Função para aleatorizar inteiros com máximo e mínimo
+		function getRandomInt(min, max) {
+			min = Math.ceil(min);
+			max = Math.floor(max);
+		return Math.floor(Math.random() * (max - min)) + min;
+}
+	
+	
+	// Variáveis dos polígonos iniciais
+	var subjectPolygon = [[getRandomInt(0, 400), getRandomInt(0, 400)], [getRandomInt(0, 400), getRandomInt(0, 400)],[getRandomInt(0, 400), getRandomInt(0, 400)],[getRandomInt(0, 400), getRandomInt(0, 400)], [getRandomInt(0, 400), getRandomInt(0, 400)],[getRandomInt(0, 400), getRandomInt(0, 400)]],
+	            clipPolygon = [[50, 50], [350, 50], [350, 350], [50, 350]];
+		
+	var clippedPolygon = clip(subjectPolygon, clipPolygon);
+	var lastPoints = subjectPolygon
+	
+    var canvas  = document.getElementById("canvas");
+	var ctx = canvas.getContext("2d");       
+
+	// Chama as funções para construção do clip
+	var createClip = function(subjectPolygon, clipPolygon, clippedPolygon){
+		drawPolygon(ctx, clipPolygon, '#888','#EBB3A2');
+		drawPolygon(ctx, subjectPolygon, '#888','#77EBD7');
+	    drawPolygonClip(ctx, clippedPolygon, '#000000','#B17D8B');
+    	}
+		
+	
+	//Funções botoes
+
+	
+	function newone(){
+	const ctx = canvas.getContext('2d');
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	var subjectPolygon = [[getRandomInt(0, 400), getRandomInt(0, 400)], [getRandomInt(0, 400), getRandomInt(0, 400)],[getRandomInt(0, 400), getRandomInt(0, 400)],[getRandomInt(0, 400), getRandomInt(0, 400)], [getRandomInt(0, 400), getRandomInt(0, 400)],[getRandomInt(0, 400), getRandomInt(0, 400)]],
+	            clipPolygon = [[50, 50], [350, 50], [350, 350], [50, 350]];
+	var clippedPolygon = clip(subjectPolygon, clipPolygon);
+	createClip(subjectPolygon, clipPolygon, clippedPolygon)}
+	
+	
+	function choose(){
+	var p1 = {"x":Number(document.getElementById("x1").value),"y":Number(document.getElementById("y1").value)};
+	var p2 = {"x":Number(document.getElementById("x2").value),"y":Number(document.getElementById("y2").value)};
+	var p3 = {"x":Number(document.getElementById("x3").value),"y":Number(document.getElementById("y3").value)};
+	var p4 = {"x":Number(document.getElementById("x4").value),"y":Number(document.getElementById("y4").value)};
+	var p5 = {"x":Number(document.getElementById("x5").value),"y":Number(document.getElementById("y5").value)};
+	var p6 = {"x":Number(document.getElementById("x6").value),"y":Number(document.getElementById("y6").value)};
+	const ctx = canvas.getContext('2d');
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	
+	var subjectPolygon = [[p1.x,p1.y], [p2.x,p2.y],[p3.x,p3.y],[p4.x,p4.y],[p5.x,p5.y],[p6.x,p6.y]],
+	            clipPolygon = [[50, 50], [350, 50], [350, 350], [50, 350]];
+	var clippedPolygon = clip(subjectPolygon, clipPolygon);
+	createClip(subjectPolygon, clipPolygon, clippedPolygon)}
+	
+	
+	// Parte da explicação:
+	function explanation(){
+	var canvas1  = document.getElementById("canvas1");
+	var ctx1 = canvas1.getContext("2d");       
+	var createClip = function(subjectPolygon, clipPolygon){
+		drawPolygon(ctx1, clipPolygon, '#888','#EBB3A2');
+		drawPolygon(ctx1, subjectPolygon, '#888','#77EBD7')};
+	var clippedPolygon = clip(subjectPolygon, clipPolygon);
+	createClip(subjectPolygon, clipPolygon, clippedPolygon);
+	ctx1.strokeStyle = '#C40006';
+	ctx1.lineWidth = 3;
+	ctx1.beginPath();
+	ctx1.moveTo(0,50);
+	ctx1.lineTo(400,50);
+	ctx1.stroke();
+	ctx1.globalAlpha=0.10;
+	ctx1.fillStyle = "#FF0000";
+	ctx1.fillRect(0,50, 400, 400);
+	
+	}
+	
+	
+	
+	
+	//Ao iniciar a página
+	createClip(subjectPolygon, clipPolygon, clippedPolygon)
+	explanation()
+	
+	</script>
+</html>
